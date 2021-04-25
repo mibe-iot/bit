@@ -1,9 +1,24 @@
 #include <Arduino.h>
 
-void setup() {
-  // put your setup code here, to run once:
+#include <Button.h>
+
+void IRAM_ATTR homeButtonHandler() { Serial.println("Pressed home button"); }
+void IRAM_ATTR backButtonHandler() { Serial.println("Pressed back button"); }
+void IRAM_ATTR forwardButtonHandler() {
+  ButtonController::debounce(
+      21, []() { Serial.println("Pressed forward button"); });
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+void setup() {
+  Serial.begin(9600);
+
+  Button homeButton = {18, &homeButtonHandler};
+  Button backButton = {5, &backButtonHandler};
+  Button forwardButton = {21, &forwardButtonHandler};
+
+  ButtonController::registerButton(homeButton);
+  ButtonController::registerButton(backButton);
+  ButtonController::registerButton(forwardButton);
 }
+
+void loop() {}
