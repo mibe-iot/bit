@@ -1,31 +1,14 @@
 #include <Arduino.h>
+#include <DHT.h>
+#include <DHT_U.h>
 
-#include <Button.h>
+#include <Pairing.h>
+#include <buttons.h>
 
-#define HOME_BUTTON_PIN 17
-#define ACTION_BUTTON_PIN 18
-#define BACK_BUTTON_PIN 5
-#define FORWARD_BUTTON_PIN 21
+#define DHTPIN A15
+#define DHTTYPE DHT11
 
-void IRAM_ATTR forwardButtonHandler() {
-  ButtonController::debounce(
-      FORWARD_BUTTON_PIN, []() { Serial.println("Pressed forward button"); });
-}
-
-void IRAM_ATTR backButtonHandler() {
-  ButtonController::debounce(BACK_BUTTON_PIN,
-                             []() { Serial.println("Pressed back button"); });
-}
-
-void IRAM_ATTR homeButtonHandler() {
-  ButtonController::debounce(HOME_BUTTON_PIN,
-                             []() { Serial.println("Pressed home button"); });
-}
-
-void IRAM_ATTR actionButtonHandler() {
-  ButtonController::debounce(ACTION_BUTTON_PIN,
-                             []() { Serial.println("Pressed action button"); });
-}
+DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
   Serial.begin(9600);
@@ -33,12 +16,21 @@ void setup() {
   Button homeButton = {HOME_BUTTON_PIN, &homeButtonHandler};
   Button backButton = {BACK_BUTTON_PIN, &backButtonHandler};
   Button forwardButton = {FORWARD_BUTTON_PIN, &forwardButtonHandler};
-  Button actionButton = {ACTION_BUTTON_PIN, &forwardButtonHandler};
+  Button actionButton = {ACTION_BUTTON_PIN, &actionButtonHandler};
 
   ButtonController::registerButton(homeButton);
   ButtonController::registerButton(backButton);
   ButtonController::registerButton(forwardButton);
   ButtonController::registerButton(actionButton);
+
+  Pairing pairing("kekw", "12345678");
+  pairing.onPair([](std::string ssid, std::string password) {
+    Serial.println("ssid:");
+    Serial.println(ssid.c_str());
+
+    Serial.println("password:");
+    Serial.println(password.c_str());
+  });
 }
 
 void loop() {}
