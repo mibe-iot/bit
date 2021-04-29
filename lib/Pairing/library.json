@@ -1,0 +1,24 @@
+{
+    "name": "Pairing",
+    "version": "1.0.0",
+    "description": "Library for pairing control device",
+    "keywords": "pairing, wifi, http, dns",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Mibe-IoT/control-device.git"
+    },
+    "authors": [
+        {
+            "name": "Max Ersh",
+            "email": "edelwud@icloud.com",
+            "url": "https://github.com/edelwud"
+        }
+    ],
+    "license": "MIT",
+    "homepage": "https://www.helloworld.org/",
+    "dependencies": {
+        "ownername/print": "~1.3.0"
+    },
+    "frameworks": "*",
+    "platforms": "*"
+}
