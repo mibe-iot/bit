@@ -24,13 +24,7 @@ void setup() {
   ButtonController::registerButton(actionButton);
 
   Pairing pairing("kekw", "12345678");
-  pairing.onPair([](std::string ssid, std::string password) {
-    Serial.println("ssid:");
-    Serial.println(ssid.c_str());
-
-    Serial.println("password:");
-    Serial.println(password.c_str());
-  });
+  pairing.onPair([]() { Serial.println("Connected"); });
 }
 
 void loop() {}
