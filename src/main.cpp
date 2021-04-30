@@ -9,6 +9,7 @@
 #define DHTTYPE DHT11
 
 DHT dht(DHTPIN, DHTTYPE);
+Pairing pairing("kekw", "12345678");
 
 void setup() {
   Serial.begin(9600);
@@ -23,8 +24,9 @@ void setup() {
   ButtonController::registerButton(forwardButton);
   ButtonController::registerButton(actionButton);
 
-  Pairing pairing("kekw", "12345678");
   pairing.onPair([]() { Serial.println("Connected"); });
 }
 
-void loop() {}
+void loop() {
+    pairing.handleConnection();
+}

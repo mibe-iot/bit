@@ -29,7 +29,11 @@ class Pairing {
 public:
   Pairing(std::string ssid, std::string password);
 
-  void onPair(std::function<void()> handler);
+  void setConnectionTimeout(int timeout);
+
+  void begin(std::function<void()> callback);
+    void disconnect();
+    void handleConnection();
 
 private:
   void setTimeout(std::function<bool()> handler, std::function<void()> resolve,
@@ -40,6 +44,8 @@ private:
 private:
   std::string ssid;
   std::string password;
+
+  int timeout = 5000;
 
   DNSServer dnsServer;
   WebServer webServer;

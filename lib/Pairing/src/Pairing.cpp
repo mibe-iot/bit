@@ -22,18 +22,15 @@ void Pairing::setTimeout(std::function<bool()> handler,
                          std::function<void()> reject, int timeout) {
   unsigned long previousMillis = millis();
   unsigned long currentMillis = millis();
-
   bool connected = false;
 
   do {
     currentMillis = millis();
     connected = !handler();
-
     if (currentMillis - previousMillis >= timeout) {
       reject();
       break;
     }
-
   } while (!connected);
 
   if (connected)
@@ -42,40 +39,46 @@ void Pairing::setTimeout(std::function<bool()> handler,
 
 bool Pairing::checkWifiConnected() { return WiFi.status() != WL_CONNECTED; }
 
-void Pairing::onPair(std::function<void()> handler) {
-  bool pairing = true;
-
+void Pairing::begin(std::function<void()> callback) {
   webServer.onNotFound(
       [this]() { webServer.send(200, "text/html", responseHTML.c_str()); });
 
-  webServer.on(UriBraces("/ssid/{}/password/{}"), [this, &handler, &pairing]() {
+  webServer.on(UriBraces("/ssid/{}/password/{}"), [this, &callback, &pairing]() {
     std::string ssid = webServer.pathArg(0).c_str();
     std::string password = webServer.pathArg(1).c_str();
 
     WiFi.mode(WIFI_AP_STA);
     WiFi.begin(ssid.c_str(), password.c_str());
 
-    this->setTimeout(
+    setTimeout(
         checkWifiConnected,
-        [this, &pairing, &handler]() {
+        [this, &callback]() {
           webServer.send(200, "application/json",
                          "{ \"status\": \"connected\" }");
-          handler();
-          webServer.stop();
-          dnsServer.stop();
-          pairing = false;
+            callback();
+            disconnect();
         },
         [this]() {
-          webServer.send(404, "application/json",
-                         "{ \"status\": \"invalid\" }");
+          webServer.send(403, "application/json",
+                         "{ \"status\": \"unauthorized\" }");
         },
-        5000);
+        timeout);
   });
 
   webServer.begin(SERVER_PORT);
+}
 
-  while (pairing) {
+void Pairing::handleConnection() {
     dnsServer.processNextRequest();
     webServer.handleClient();
-  }
+}
+
+void Pairing::disconnect() {
+    webServer.stop();
+    dnsServer.stop();
+    WiFi.softAPdisconnect(true);
+}
+
+void Pairing::setConnectionTimeout(int timeout) {
+    this->timeout = timeout;
 }
