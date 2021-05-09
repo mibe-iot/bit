@@ -1,0 +1,21 @@
+{
+    "name": "Environment",
+    "version": "1.0.0",
+    "description": "Library for scanning environment",
+    "keywords": "temperature, humidity",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Mibe-IoT/control-device.git"
+    },
+    "authors": [
+        {
+            "name": "Max Ersh",
+            "email": "edelwud@icloud.com",
+            "url": "https://github.com/edelwud"
+        }
+    ],
+    "license": "MIT",
+    "homepage": "https://www.helloworld.org/",
+    "frameworks": "*",
+    "platforms": "*"
+}
