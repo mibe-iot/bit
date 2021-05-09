@@ -43,7 +43,7 @@ void Pairing::begin(std::function<void()> callback) {
   webServer.onNotFound(
       [this]() { webServer.send(200, "text/html", responseHTML.c_str()); });
 
-  webServer.on(UriBraces("/ssid/{}/password/{}"), [this, &callback, &pairing]() {
+  webServer.on(UriBraces("/ssid/{}/password/{}"), [this, &callback]() {
     std::string ssid = webServer.pathArg(0).c_str();
     std::string password = webServer.pathArg(1).c_str();
 
@@ -55,8 +55,8 @@ void Pairing::begin(std::function<void()> callback) {
         [this, &callback]() {
           webServer.send(200, "application/json",
                          "{ \"status\": \"connected\" }");
-            callback();
-            disconnect();
+          callback();
+          disconnect();
         },
         [this]() {
           webServer.send(403, "application/json",
@@ -69,16 +69,14 @@ void Pairing::begin(std::function<void()> callback) {
 }
 
 void Pairing::handleConnection() {
-    dnsServer.processNextRequest();
-    webServer.handleClient();
+  dnsServer.processNextRequest();
+  webServer.handleClient();
 }
 
 void Pairing::disconnect() {
-    webServer.stop();
-    dnsServer.stop();
-    WiFi.softAPdisconnect(true);
+  webServer.stop();
+  dnsServer.stop();
+  WiFi.softAPdisconnect(true);
 }
 
-void Pairing::setConnectionTimeout(int timeout) {
-    this->timeout = timeout;
-}
+void Pairing::setConnectionTimeout(int timeout) { this->timeout = timeout; }

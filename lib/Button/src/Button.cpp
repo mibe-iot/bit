@@ -4,23 +4,51 @@
 
 #include <Button.h>
 
-static std::map<int, TickType_t> buttons;
-
-portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-
-void ButtonController::registerButton(Button button) {
-  pinMode(button.PIN, INPUT_PULLUP);
-  auto handle = digitalPinToInterrupt(button.PIN);
-  attachInterrupt(handle, button.handler, FALLING);
-  buttons[button.PIN] = xTaskGetTickCount();
+Button::Button(int pin, void (*handler)()) {
+  this->pin = pin;
+  this->handler = handler;
+  for (int i = 0; i < HISTORY_LENGTH; i++)
+    history[i] = HIGH;
 }
 
-void ButtonController::debounce(int PIN, std::function<void(void)> handler) {
-  portENTER_CRITICAL_ISR(&mux);
-  if (buttons.find(PIN) != buttons.end())
-    if (xTaskGetTickCount() - buttons[PIN] > 200) {
-      handler();
-      buttons[PIN] = xTaskGetTickCount();
+void Button::setup() { digitalWrite(pin, HIGH); }
+
+void Button::addToHistory(int value) {
+  for (int i = 0; i < HISTORY_LENGTH - 1; i++) {
+    history[i] = history[i + 1];
+  }
+  history[HISTORY_LENGTH - 1] = value;
+}
+
+bool Button::isPushed() {
+  int pinStatus = digitalRead(pin);
+  addToHistory(pinStatus);
+
+  for (int i = HISTORY_LENGTH - 1, highThreshold = 0, lowThreshold = 0; i >= 0;
+       i--) {
+    if (history[i] == HIGH) {
+      highThreshold++;
+      if (highThreshold == HISTORY_THRESHOLD) {
+        return false;
+      }
     }
-  portEXIT_CRITICAL_ISR(&mux);
+
+    if (history[i] == LOW) {
+      highThreshold = 0;
+      lowThreshold++;
+      history[HISTORY_LENGTH - 1] = HISTORY_PUSHED;
+      if (history[HISTORY_LENGTH - 2] == HISTORY_PUSHED) {
+        return false;
+      } else {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+void Button::handlePushEvent() {
+  if (isPushed())
+    this->handler();
 }
