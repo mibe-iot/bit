@@ -12,7 +12,7 @@
 
 DHT_Unified dht(DHTPIN, DHTTYPE);
 
-Pairing pairing("unattached", "12345678");
+Pairing pairing("unattached2", "12345678");
 Environment environment;
 
 Button backButton(BACK_BUTTON_PIN, &backButtonHandler);
@@ -30,7 +30,10 @@ void setup() {
   backButton.setup();
   forwardButton.setup();
   actionButton.setup();
-  pairing.begin([]() { Serial.println("Connected"); });
+  pairing.begin([]() {
+    Serial.println("Connected");
+    Serial.println(WiFi.localIP());
+  });
 }
 
 void loop() {

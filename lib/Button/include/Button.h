@@ -23,5 +23,5 @@ private:
 private:
   int pin;
   void (*handler)();
-  char history[HISTORY_LENGTH]{HISTORY_LENGTH};
+  char history[HISTORY_LENGTH];
 };

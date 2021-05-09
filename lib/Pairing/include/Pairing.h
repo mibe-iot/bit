@@ -24,11 +24,11 @@ public:
   void disconnect();
   void handleConnection();
 
+  static bool checkWifiConnected();
+
 private:
   void setTimeout(std::function<bool()> handler, std::function<void()> resolve,
                   std::function<void()> reject, int timeout);
-
-  static bool checkWifiConnected();
 
 private:
   std::string ssid;

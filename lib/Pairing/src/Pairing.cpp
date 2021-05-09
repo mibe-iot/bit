@@ -18,7 +18,9 @@ static std::string responseHTML =
     "</body></html>";
 
 Pairing::Pairing(std::string ssid, std::string password)
-    : ssid(ssid), password(password) {}
+    : ssid(ssid), password(password) {
+  WiFi.mode(WIFI_MODE_APSTA);
+}
 
 void Pairing::setTimeout(std::function<bool()> handler,
                          std::function<void()> resolve,
@@ -43,10 +45,8 @@ void Pairing::setTimeout(std::function<bool()> handler,
 bool Pairing::checkWifiConnected() { return WiFi.status() != WL_CONNECTED; }
 
 void Pairing::begin(std::function<void()> callback) {
-  WiFi.mode(WIFI_AP);
   WiFi.softAP(ssid.c_str(), password.c_str());
-  delay(100);
-
+  delay(200);
   WiFi.softAPConfig(apIP, apIP, mask);
 
   dnsServer.start(DNS_PORT, SERVER_NAME, apIP);
@@ -54,11 +54,10 @@ void Pairing::begin(std::function<void()> callback) {
   webServer.onNotFound(
       [this]() { webServer.send(200, "text/html", responseHTML.c_str()); });
 
-  webServer.on(UriBraces("/ssid/{}/password/{}"), [this, &callback]() {
+  webServer.on(UriBraces("/ssid/{}/password/{}"), [this, callback]() {
     std::string ssid = webServer.pathArg(0).c_str();
     std::string password = webServer.pathArg(1).c_str();
 
-    WiFi.mode(WIFI_AP_STA);
     WiFi.begin(ssid.c_str(), password.c_str());
 
     setTimeout(
