@@ -30,10 +30,11 @@ void setup() {
   backButton.setup();
   forwardButton.setup();
   actionButton.setup();
-  // pairing.begin([]() { Serial.println("Connected"); });
+  pairing.begin([]() { Serial.println("Connected"); });
 }
 
 void loop() {
+  pairing.handleConnection();
   backButton.handlePushEvent();
   actionButton.handlePushEvent();
   forwardButton.handlePushEvent();

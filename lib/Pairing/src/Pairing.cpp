@@ -6,16 +6,19 @@
 #include <uri/UriBraces.h>
 #include <uri/UriRegex.h>
 
+static std::string responseHTML =
+    "<!DOCTYPE html><html>"
+    "<head><meta name=\"viewport\" content=\"width=device-width, "
+    "initial-scale=1\">"
+    "<style>html { font-family: Helvetica; display: inline-block; margin: 0px "
+    "auto; text-align: center;}"
+    "</style></head>"
+    "<body><h1>ESP32 Web Server</h1>"
+    "<p>Hello World</p>"
+    "</body></html>";
+
 Pairing::Pairing(std::string ssid, std::string password)
-    : ssid(ssid), password(password) {
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(ssid.c_str(), password.c_str());
-  delay(100);
-
-  WiFi.softAPConfig(apIP, apIP, mask);
-
-  dnsServer.start(DNS_PORT, SERVER_NAME, apIP);
-}
+    : ssid(ssid), password(password) {}
 
 void Pairing::setTimeout(std::function<bool()> handler,
                          std::function<void()> resolve,
@@ -40,6 +43,14 @@ void Pairing::setTimeout(std::function<bool()> handler,
 bool Pairing::checkWifiConnected() { return WiFi.status() != WL_CONNECTED; }
 
 void Pairing::begin(std::function<void()> callback) {
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(ssid.c_str(), password.c_str());
+  delay(100);
+
+  WiFi.softAPConfig(apIP, apIP, mask);
+
+  dnsServer.start(DNS_PORT, SERVER_NAME, apIP);
+
   webServer.onNotFound(
       [this]() { webServer.send(200, "text/html", responseHTML.c_str()); });
 
