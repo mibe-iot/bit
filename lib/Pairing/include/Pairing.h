@@ -34,6 +34,7 @@ private:
   std::string ssid;
   std::string password;
 
+  bool pairing = true;
   int timeout = 5000;
 
   DNSServer dnsServer;

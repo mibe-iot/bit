@@ -60,12 +60,17 @@ void Pairing::begin(std::function<void()> callback) {
 
     WiFi.begin(ssid.c_str(), password.c_str());
 
+    WiFi.localIP().toString();
+
     setTimeout(
         checkWifiConnected,
         [this, &callback]() {
           webServer.send(200, "application/json",
-                         "{ \"status\": \"connected\" }");
+                         "{ \"status\": \"" + WiFi.localIP().toString() +
+                             "\" }");
+          delay(200);
           callback();
+          pairing = false;
           disconnect();
         },
         [this]() {
@@ -79,8 +84,10 @@ void Pairing::begin(std::function<void()> callback) {
 }
 
 void Pairing::handleConnection() {
-  dnsServer.processNextRequest();
-  webServer.handleClient();
+  if (pairing) {
+    dnsServer.processNextRequest();
+    webServer.handleClient();
+  }
 }
 
 void Pairing::disconnect() {
