@@ -71,6 +71,7 @@ void Pairing::begin(std::function<void()> callback) {
           delay(200);
           callback();
           pairing = false;
+          delay(1000);
           disconnect();
         },
         [this]() {

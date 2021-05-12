@@ -66,6 +66,10 @@ void handleWSMessage(uint8_t *payload, size_t length) {
     auto metric = environment.getMetric(dht);
     doc["temperature"] = metric.temperature;
     doc["humidity"] = metric.humidity;
+
+    std::string buffer;
+    serializeJson(doc, buffer);
+    event.broadcastTXT(buffer.c_str(), (size_t)buffer.size());
   }
 }
 
