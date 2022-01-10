@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "esp_log.h": "c",
-        "ctype.h": "c",
-        "esp_spi_flash.h": "c"
-    }
-}
