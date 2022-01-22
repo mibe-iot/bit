@@ -3,6 +3,7 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <secrets.h>
 
 BLEServer *pServer = NULL;
 BLECharacteristic *pTxCharacteristic;
@@ -62,7 +63,7 @@ void setup()
 {
   Serial.begin(115200);
 
-  BLEDevice::init(SERVICE_NAME);
+  BLEDevice::init(Secrets::GetBLEServiceName());
 
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new BitBLEServer());
