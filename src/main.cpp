@@ -1,125 +1,93 @@
-#include <Adafruit_Sensor.h>
-#include <DHT.h>
-#include <DHT_U.h>
+#include <Arduino.h>
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
 
-#include <WebSocketsServer.h>
+BLEServer *pServer = NULL;
+BLECharacteristic *pTxCharacteristic;
+bool deviceConnected = false;
+bool oldDeviceConnected = false;
+uint8_t txValue = 0;
 
-#include <ArduinoJson.h>
+#define SERVICE_NAME "CONFIG_WIFI_SSID"
+#define SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
+#define CHARACTERISTIC_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+#define CHARACTERISTIC_UUID_TX "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 
-#include <Environment.h>
-#include <Pairing.h>
-#include <buttons.h>
+class BitBLEServer : public BLEServerCallbacks
+{
+  void onConnect(BLEServer *pServer)
+  {
+    deviceConnected = true;
+  };
 
-#define DHTPIN 13
-#define DHTTYPE DHT11
+  void onDisconnect(BLEServer *pServer)
+  {
+    deviceConnected = false;
+  }
+};
 
-DHT_Unified dht(DHTPIN, DHTTYPE);
+class BitBLECharacteristic : public BLECharacteristicCallbacks
+{
+  void onWrite(BLECharacteristic *pCharacteristic)
+  {
+    std::string rxValue = pCharacteristic->getValue();
 
-Pairing pairing("unattached2", "12345678");
-WebSocketsServer event(81);
+    if (rxValue.length() > 0)
+    {
+      Serial.println("*********");
+      Serial.print("Received Value: ");
+      for (int i = 0; i < rxValue.length(); i++)
+        Serial.print(rxValue[i]);
 
-Environment environment;
+      Serial.println();
+      Serial.println("*********");
+    }
+  }
+};
 
-Button backButton(BACK_BUTTON_PIN, []() {
-  DynamicJsonDocument doc(128);
-
-  doc["type"] = "button";
-  doc["value"] = "back";
-
-  std::string buffer;
-  serializeJson(doc, buffer);
-  event.broadcastTXT(buffer.c_str(), (size_t)buffer.size());
-});
-
-Button forwardButton(FORWARD_BUTTON_PIN, []() {
-  DynamicJsonDocument doc(128);
-
-  doc["type"] = "button";
-  doc["value"] = "forward";
-
-  std::string buffer;
-  serializeJson(doc, buffer);
-  event.broadcastTXT(buffer.c_str(), (size_t)buffer.size());
-});
-
-Button actionButton(ACTION_BUTTON_PIN, []() {
-  DynamicJsonDocument doc(128);
-
-  doc["type"] = "button";
-  doc["value"] = "action";
-
-  std::string buffer;
-  serializeJson(doc, buffer);
-  event.broadcastTXT(buffer.c_str(), (size_t)buffer.size());
-});
-
-void handleWSMessage(uint8_t *payload, size_t length) {
-  DynamicJsonDocument doc(128);
-  deserializeJson(doc, payload);
-
-  std::string type = doc["type"];
-  Serial.println(type.c_str());
-  if (type == "metric") {
-    doc.clear();
-    doc["type"] = "metric";
-
-    auto metric = environment.getMetric(dht);
-    doc["temperature"] = metric.temperature;
-    doc["humidity"] = metric.humidity;
-
-    std::string buffer;
-    serializeJson(doc, buffer);
-    event.broadcastTXT(buffer.c_str(), (size_t)buffer.size());
+void notifierTask(void *param)
+{
+  while (true)
+  {
+    pTxCharacteristic->setValue(&txValue, 1);
+    pTxCharacteristic->notify();
+    txValue++;
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
 }
 
-void handleWSEvent(uint8_t num, WStype_t type, uint8_t *payload,
-                   size_t length) {
+void setup()
+{
+  Serial.begin(115200);
 
-  switch (type) {
-  case WStype_DISCONNECTED:
-    Serial.printf("[%u] Disconnected!\n", num);
-    break;
-  case WStype_CONNECTED: {
-    IPAddress ip = event.remoteIP(num);
-    Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0],
-                  ip[1], ip[2], ip[3], payload);
+  BLEDevice::init(SERVICE_NAME);
 
-    // send message to client
-    event.sendTXT(num, "Connected");
-  } break;
-  case WStype_TEXT: {
-    handleWSMessage(payload, length);
-    break;
-  }
-  }
+  pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new BitBLEServer());
+
+  BLEService *pService = pServer->createService(SERVICE_UUID);
+
+  pTxCharacteristic = pService->createCharacteristic(
+      CHARACTERISTIC_UUID_TX,
+      BLECharacteristic::PROPERTY_NOTIFY);
+  pTxCharacteristic->addDescriptor(new BLE2902());
+
+  BLECharacteristic *pRxCharacteristic = pService->createCharacteristic(
+      CHARACTERISTIC_UUID_RX,
+      BLECharacteristic::PROPERTY_WRITE);
+  pRxCharacteristic->setCallbacks(new BitBLECharacteristic());
+
+  pService->start();
+  pServer->getAdvertising()->start();
+
+  xTaskCreate(notifierTask, "notifierTask", 4096, NULL, 1, NULL);
+
+  Serial.println("Waiting a client connection to notify...");
 }
 
-void setup() {
-  Serial.begin(9600);
-
-  environment.begin(dht);
-
-  backButton.setup();
-  forwardButton.setup();
-  actionButton.setup();
-
-  event.begin();
-  event.onEvent(handleWSEvent);
-
-  pairing.begin([]() {
-    digitalWrite(2, 1);
-
-    Serial.println("Connected");
-    Serial.println(WiFi.localIP());
-  });
-}
-
-void loop() {
-  event.loop();
-
-  pairing.handleConnection();
-  backButton.handlePushEvent();
-  actionButton.handlePushEvent();
-  forwardButton.handlePushEvent();
+void loop()
+{
+  vTaskDelete(NULL);
 }
