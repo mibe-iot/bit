@@ -10,11 +10,12 @@ bool deviceConnected = false;
 bool oldDeviceConnected = false;
 uint8_t txValue = 0;
 
+#define SERVICE_NAME "CONFIG_WIFI_SSID"
 #define SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 #define CHARACTERISTIC_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 #define CHARACTERISTIC_UUID_TX "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 
-class MyServerCallbacks : public BLEServerCallbacks
+class BitBLEServer : public BLEServerCallbacks
 {
   void onConnect(BLEServer *pServer)
   {
@@ -27,7 +28,7 @@ class MyServerCallbacks : public BLEServerCallbacks
   }
 };
 
-class MyCallbacks : public BLECharacteristicCallbacks
+class BitBLECharacteristic : public BLECharacteristicCallbacks
 {
   void onWrite(BLECharacteristic *pCharacteristic)
   {
@@ -61,10 +62,10 @@ void setup()
 {
   Serial.begin(115200);
 
-  BLEDevice::init("Bit Service");
+  BLEDevice::init(SERVICE_NAME);
 
   pServer = BLEDevice::createServer();
-  pServer->setCallbacks(new MyServerCallbacks());
+  pServer->setCallbacks(new BitBLEServer());
 
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
@@ -76,7 +77,7 @@ void setup()
   BLECharacteristic *pRxCharacteristic = pService->createCharacteristic(
       CHARACTERISTIC_UUID_RX,
       BLECharacteristic::PROPERTY_WRITE);
-  pRxCharacteristic->setCallbacks(new MyCallbacks());
+  pRxCharacteristic->setCallbacks(new BitBLECharacteristic());
 
   pService->start();
   pServer->getAdvertising()->start();
