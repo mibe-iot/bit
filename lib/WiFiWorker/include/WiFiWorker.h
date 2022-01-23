@@ -5,8 +5,7 @@
 const uint8_t WifiConnected = 1 << 0;
 const uint32_t WifiTimeout = 30000;
 
-class WiFiWorker
-{
+class WiFiWorker {
 public:
-    static void TaskHandler(void *param);
+    [[noreturn]] static void TaskHandler(void *param);
 };
