@@ -22,7 +22,7 @@ void BLEWorker::TaskHandler(void *param) {
     BLEDevice::init(Secrets::GetBLEServiceName());
 
     BLEServer *pServer = BLEDevice::createServer();
-    pServer->setCallbacks(new BLECallbacks());
+    pServer->setCallbacks(new BLECallbacks(flags));
 
     BLEService *pService = pServer->createService(Secrets::GetBLEServiceUUID());
 
