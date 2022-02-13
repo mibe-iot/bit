@@ -6,12 +6,17 @@
 #define LED 5
 
 [[noreturn]] void NotifierWorker(void *param) {
-    auto flags = (EventGroupHandle_t)param;
+    auto flags = (EventGroupHandle_t) param;
+    EventBits_t uxBits;
 
     while (true) {
         digitalWrite(LED, LOW);
-        xEventGroupWaitBits(flags, WifiConnected | BLEConnected, pdFALSE, pdTRUE, portMAX_DELAY);
-        digitalWrite(LED, HIGH);
+        uxBits = xEventGroupWaitBits(flags, WifiConnected | BLEConnected, pdFALSE, pdTRUE, pdMS_TO_TICKS(20));
+        if ((uxBits & (WifiConnected | BLEConnected)) == (WifiConnected | BLEConnected)) {
+            digitalWrite(LED, HIGH);
+        } else {
+            digitalWrite(LED, LOW);
+        }
         vTaskDelay(pdMS_TO_TICKS(300));
     }
 }
