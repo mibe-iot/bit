@@ -2,43 +2,39 @@
 
 #include <secrets.h>
 #include <BLECallbacks.h>
-#include <BLENotifier.h>
-
-uint8_t txValue = 0;
-
-[[noreturn]] void notifierTask(void *param) {
-    BLECharacteristic *pTxCharacteristic = (BLECharacteristic *)param;
-    while (true) {
-        pTxCharacteristic->setValue(&txValue, 1);
-        pTxCharacteristic->notify();
-        txValue++;
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-    }
-}
+#include <NameNotifier.h>
+#include <SSIDNotifier.h>
+#include <PasswordNotifier.h>
 
 void BLEWorker::TaskHandler(void *param) {
-    EventGroupHandle_t flags = (EventGroupHandle_t)param;
+    EventGroupHandle_t flags = (EventGroupHandle_t) param;
 
-    BLEDevice::init(Secrets::GetBLEServiceName());
+    auto secrets = Secrets::GetJsonObject();
+
+    BLEDevice::init(secrets[F("SERVICE_NAME")]);
 
     BLEServer *pServer = BLEDevice::createServer();
     pServer->setCallbacks(new BLECallbacks(flags));
 
-    BLEService *pService = pServer->createService(Secrets::GetBLEServiceUUID());
+    BLEService *pService = pServer->createService(secrets[F("SERVICE_UUID")].as<std::string>());
 
-    BLECharacteristic *pTxCharacteristic = pService->createCharacteristic(
-            CHARACTERISTIC_UUID_TX,
-            BLECharacteristic::PROPERTY_NOTIFY);
-    pTxCharacteristic->addDescriptor(new BLE2902());
+    BLECharacteristic *nameReceiverCharacteristic = pService->createCharacteristic(
+            secrets[F("SERVICE_NAME_RECEIVER")].as<std::string>(),
+            BLECharacteristic::PROPERTY_WRITE_NR);
+    nameReceiverCharacteristic->setCallbacks(new NameNotifier(flags));
 
-    BLECharacteristic *pRxCharacteristic = pService->createCharacteristic(
-            CHARACTERISTIC_UUID_RX,
-            BLECharacteristic::PROPERTY_WRITE);
-    pRxCharacteristic->setCallbacks(new BLENotifier());
+    BLECharacteristic *ssidReceiverCharacteristic = pService->createCharacteristic(
+            secrets[F("SERVICE_SSID_RECEIVER")].as<std::string>(),
+            BLECharacteristic::PROPERTY_WRITE_NR);
+    ssidReceiverCharacteristic->setCallbacks(new SSIDNotifier(flags));
+
+    BLECharacteristic *passwordReceiverCharacteristic = pService->createCharacteristic(
+            secrets[F("SERVICE_PASSWORD_RECEIVER")].as<std::string>(),
+            BLECharacteristic::PROPERTY_WRITE_NR);
+    passwordReceiverCharacteristic->setCallbacks(new PasswordNotifier(flags));
 
     pService->start();
     pServer->getAdvertising()->start();
 
-    xTaskCreate(notifierTask, "notifier", 4096, pTxCharacteristic, 2, nullptr);
     vTaskDelete(nullptr);
 }
