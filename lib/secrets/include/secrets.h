@@ -3,18 +3,30 @@
 #include <string>
 #include <ArduinoJson.h>
 
-class Secrets
-{
+enum SharedConnectivityState : uint32_t {
+    CONNECTED = 1 << 0,
+    NAME_RECEIVED = 1 << 1,
+    SSID_RECEIVED = 1 << 2,
+    PASSWORD_RECEIVED = 1 << 3,
+    WIFI_CONNECTED = 1 << 4
+};
+
+class Secrets {
 public:
     static std::string GetBLEServiceName();
+
     static std::string GetBLEServiceUUID();
+
     static std::string GetWiFiSSID();
+
     static std::string GetWiFiPassword();
 
-    static void SetSSID(const char *_ssid);
+    static void SetSSID(std::string _ssid);
+
     static std::string GetSSID();
 
-    static void SetPassword(const char *_password);
+    static void SetPassword(std::string _password);
+
     static std::string GetPassword();
 
     static JsonObject GetJsonObject();

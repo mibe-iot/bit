@@ -10,7 +10,7 @@ void SSIDNotifier::onWrite(BLECharacteristic *pCharacteristic) {
     std::string rxValue = pCharacteristic->getValue();
 
     if (rxValue.length() > 0) {
-        xEventGroupSetBits(flags, BLEState::SSID_RECEIVED);
-        Secrets::SetSSID((char *) pCharacteristic->getData());
+        xEventGroupSetBits(flags, SharedConnectivityState::SSID_RECEIVED);
+        Secrets::SetSSID(rxValue);
     }
 }

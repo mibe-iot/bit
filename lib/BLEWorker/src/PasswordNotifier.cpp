@@ -10,7 +10,7 @@ void PasswordNotifier::onWrite(BLECharacteristic *pCharacteristic) {
     std::string rxValue = pCharacteristic->getValue();
 
     if (rxValue.length() > 0) {
-        xEventGroupSetBits(flags, BLEState::PASSWORD_RECEIVED);
-        Secrets::SetPassword((char *) pCharacteristic->getData());
+        xEventGroupSetBits(flags, SharedConnectivityState::PASSWORD_RECEIVED);
+        Secrets::SetPassword(rxValue);
     }
 }

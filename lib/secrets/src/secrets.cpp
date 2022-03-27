@@ -13,14 +13,6 @@ JsonObject Secrets::GetJsonObject() {
     return doc.as<JsonObject>();
 }
 
-void Secrets::SetSSID(const char *_ssid) {
-    ssid = _ssid;
-}
-
-std::string Secrets::GetSSID() {
-    return ssid;
-}
-
 std::string Secrets::GetBLEServiceName() {
     deserializeJson(doc, secrets_json_start);
     JsonObject obj = doc.as<JsonObject>();
@@ -45,10 +37,18 @@ std::string Secrets::GetWiFiPassword() {
     return obj[F("WIFI_PASSWORD")];
 }
 
-void Secrets::SetPassword(const char *_password) {
+void Secrets::SetPassword(std::string _password) {
     password = _password;
 }
 
 std::string Secrets::GetPassword() {
     return password;
+}
+
+void Secrets::SetSSID(std::string _ssid) {
+    ssid = _ssid;
+}
+
+std::string Secrets::GetSSID() {
+    return ssid;
 }
