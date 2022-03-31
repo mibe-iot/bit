@@ -36,5 +36,19 @@ void BLEWorker::TaskHandler(void *param) {
     pService->start();
     pServer->getAdvertising()->start();
 
+    while (true) {
+        EventBits_t uxBits = xEventGroupWaitBits(flags, SharedConnectivityState::WIFI_CONNECTED, pdFALSE, pdTRUE,
+                                                 pdMS_TO_TICKS(200));
+        if ((uxBits & SharedConnectivityState::WIFI_CONNECTED) == SharedConnectivityState::WIFI_CONNECTED) {
+            break;
+        }
+        vTaskDelay(pdMS_TO_TICKS(300));
+    }
+
+    pServer->getAdvertising()->stop();
+    pService->stop();
+
+    BLEDevice::deinit();
+
     vTaskDelete(nullptr);
 }

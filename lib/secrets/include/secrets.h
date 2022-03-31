@@ -8,7 +8,8 @@ enum SharedConnectivityState : uint32_t {
     NAME_RECEIVED = 1 << 1,
     SSID_RECEIVED = 1 << 2,
     PASSWORD_RECEIVED = 1 << 3,
-    WIFI_CONNECTED = 1 << 4
+    WIFI_CONNECTED = 1 << 4,
+    MQTT_CONNECT = 1 << 5,
 };
 
 class Secrets {

@@ -2,8 +2,9 @@
 #include <secrets.h>
 #include <WiFiWorker.h>
 #include <BLEWorker.h>
+#include <MQTTWorker.h>
 
-#define LED 5
+#define LED 2
 
 [[noreturn]] void NotifierWorker(void *param) {
     auto flags = (EventGroupHandle_t) param;
@@ -28,7 +29,7 @@ void setup() {
     Serial.begin(115200);
 
     xTaskCreate(BLEWorker::TaskHandler, "BLEWorker::TaskHandler", 8192, flags, 1, nullptr);
-    xTaskCreate(WiFiWorker::TaskHandler, "WiFiWorker::TaskHandler", 8192, flags, 1, nullptr);
+    xTaskCreate(WiFiWorker::TaskHandler, "WiFiWorker::TaskHandler", 8192, flags, 2, nullptr);
     xTaskCreate(NotifierWorker, "Notifier", 1024, flags, 10, nullptr);
 
     Serial.println("Waiting a client connection to notify...");
