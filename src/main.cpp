@@ -2,8 +2,9 @@
 #include <secrets.h>
 #include <WiFiWorker.h>
 #include <BLEWorker.h>
+#include <MQTTWorker.h>
 
-#define LED 5
+#define LED 2
 
 [[noreturn]] void NotifierWorker(void *param) {
     auto flags = (EventGroupHandle_t) param;
@@ -11,11 +12,10 @@
 
     while (true) {
         digitalWrite(LED, LOW);
-        uxBits = xEventGroupWaitBits(flags, WifiConnected | BLEConnected, pdFALSE, pdTRUE, pdMS_TO_TICKS(20));
-        if ((uxBits & (WifiConnected | BLEConnected)) == (WifiConnected | BLEConnected)) {
+        uxBits = xEventGroupWaitBits(flags, SharedConnectivityState::WIFI_CONNECTED, pdFALSE, pdTRUE,
+                                     pdMS_TO_TICKS(20));
+        if ((uxBits & SharedConnectivityState::WIFI_CONNECTED) == SharedConnectivityState::WIFI_CONNECTED) {
             digitalWrite(LED, HIGH);
-        } else {
-            digitalWrite(LED, LOW);
         }
         vTaskDelay(pdMS_TO_TICKS(300));
     }
@@ -29,7 +29,7 @@ void setup() {
     Serial.begin(115200);
 
     xTaskCreate(BLEWorker::TaskHandler, "BLEWorker::TaskHandler", 8192, flags, 1, nullptr);
-    xTaskCreate(WiFiWorker::TaskHandler, "WiFiWorker::TaskHandler", 8192, flags, 1, nullptr);
+    xTaskCreate(WiFiWorker::TaskHandler, "WiFiWorker::TaskHandler", 8192, flags, 2, nullptr);
     xTaskCreate(NotifierWorker, "Notifier", 1024, flags, 10, nullptr);
 
     Serial.println("Waiting a client connection to notify...");
