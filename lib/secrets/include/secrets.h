@@ -30,5 +30,9 @@ public:
 
     static std::string GetPassword();
 
+    static std::string GetName();
+
+    static void SetName(std::string _name);
+
     static JsonObject GetJsonObject();
 };

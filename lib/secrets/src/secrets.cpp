@@ -7,6 +7,7 @@ DynamicJsonDocument doc(1024);
 
 static std::string ssid;
 static std::string password;
+static std::string name;
 
 JsonObject Secrets::GetJsonObject() {
     deserializeJson(doc, secrets_json_start);
@@ -51,4 +52,12 @@ void Secrets::SetSSID(std::string _ssid) {
 
 std::string Secrets::GetSSID() {
     return ssid;
+}
+
+std::string Secrets::GetName() {
+    return name;
+}
+
+void Secrets::SetName(std::string _name) {
+    name = _name;
 }
