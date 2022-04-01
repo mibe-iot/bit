@@ -3,7 +3,7 @@
 #include <SharedState.h>
 #include <BLEWorker.h>
 
-portMUX_TYPE serialMux = portMUX_INITIALIZER_UNLOCKED;
+const char TAG[] = "Wi-Fi";
 
 [[noreturn]] void WiFiWorker::Connect(void *param) {
     auto state = (SharedState *) param;
@@ -15,12 +15,7 @@ portMUX_TYPE serialMux = portMUX_INITIALIZER_UNLOCKED;
         }
 
         xEventGroupClearBits(state->flags, SharedConnectivityState::WIFI_CONNECTED);
-
         WiFi.begin(state->configuration->wifi->GetSSID().c_str(), state->configuration->wifi->GetPassword().c_str());
-
-        Serial.print("Connecting to SSID \"");
-        Serial.print(state->configuration->wifi->GetSSID().c_str());
-        Serial.println("\"...");
 
         uint32_t start = millis();
         while ((!WiFi.isConnected()) && (millis() - start < WifiTimeout)) {
@@ -29,13 +24,9 @@ portMUX_TYPE serialMux = portMUX_INITIALIZER_UNLOCKED;
 
         if (WiFi.isConnected()) {
             xEventGroupSetBits(state->flags, SharedConnectivityState::WIFI_CONNECTED);
-            portENTER_CRITICAL(&serialMux);
-            Serial.print("Connected to WiFi with IP ");
-            Serial.println(WiFi.localIP());
-            portEXIT_CRITICAL(&serialMux);
         } else {
             WiFi.disconnect();
-            Serial.println("Failed to connect to WiFi!");
+            ESP_LOGE(TAG, "failed to connect to Wi-Fi with SSID \"%s\"", state->configuration->wifi->GetSSID().c_str());
             vTaskDelay(pdMS_TO_TICKS(WifiTimeout));
         }
     }
@@ -56,12 +47,12 @@ portMUX_TYPE serialMux = portMUX_INITIALIZER_UNLOCKED;
                 SharedConnectivityState::SSID_RECEIVED | SharedConnectivityState::PASSWORD_RECEIVED,
                 pdFALSE,
                 pdTRUE,
-                pdMS_TO_TICKS(20));
+                pdMS_TO_TICKS(10));
         if ((uxBits & (SharedConnectivityState::SSID_RECEIVED | SharedConnectivityState::PASSWORD_RECEIVED)) ==
             (SharedConnectivityState::SSID_RECEIVED | SharedConnectivityState::PASSWORD_RECEIVED)) {
-            xTaskCreate(WiFiWorker::Connect, "WiFiConnector", 4096, state, tskIDLE_PRIORITY, NULL);
+            xTaskCreate(WiFiWorker::Connect, "WiFiConnector", 4096, state, 4 | portPRIVILEGE_BIT, NULL);
             vTaskDelete(NULL);
         }
-        vTaskDelay(pdMS_TO_TICKS(300));
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }

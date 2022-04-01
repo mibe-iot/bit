@@ -1,11 +1,9 @@
-#include <Arduino.h>
+#include <AtmosphereWorker.h>
 #include <SharedState.h>
 #include <WiFiWorker.h>
 #include <BLEWorker.h>
 #include <MQTTWorker.h>
-#include <AtmosphereWorker.h>
 
-#define DHTTYPE DHT11
 #define LED 5
 
 [[noreturn]] void NotifierWorker(void *param) {
@@ -15,7 +13,7 @@
     while (true) {
         digitalWrite(LED, LOW);
         uxBits = xEventGroupWaitBits(flags, SharedConnectivityState::WIFI_CONNECTED, pdFALSE, pdTRUE,
-                                     pdMS_TO_TICKS(20));
+                                     pdMS_TO_TICKS(100));
         if ((uxBits & SharedConnectivityState::WIFI_CONNECTED) == SharedConnectivityState::WIFI_CONNECTED) {
             digitalWrite(LED, HIGH);
         }
@@ -27,20 +25,18 @@ void setup() {
     EventGroupHandle_t flags = xEventGroupCreate();
     auto configuration = new SharedConfiguration();
     auto mqtt = new PubSubClient();
-    auto state = new SharedState{ flags, mqtt, configuration };
+    auto state = new SharedState{flags, mqtt, configuration};
     state->CheckConfiguration();
 
     pinMode(LED, OUTPUT);
     digitalWrite(LED, LOW);
     Serial.begin(115200);
 
-    xTaskCreate(BLEWorker::TaskHandler, "BLEWorker::TaskHandler", 8192, state, 1, nullptr);
-    xTaskCreate(WiFiWorker::TaskHandler, "WiFiWorker::TaskHandler", 8192, state, 2, nullptr);
-    xTaskCreate(MQTTWorker::TaskHandler, "MQTTWorker::TaskHandler", 8192, state, 1, nullptr);
-    xTaskCreate(AtmosphereWorker::TaskHandler, "AtmosphereWorker::TaskHandler", 8192, state, 1, nullptr);
-    xTaskCreate(NotifierWorker, "Notifier", 1024, flags, 10, nullptr);
-
-    Serial.println("Waiting a client connection to notify...");
+    xTaskCreate(BLEWorker::TaskHandler, "BLEWorker::TaskHandler", 8192, state, 1 | portPRIVILEGE_BIT, nullptr);
+    xTaskCreate(WiFiWorker::TaskHandler, "WiFiWorker::TaskHandler", 8192, state, 4 | portPRIVILEGE_BIT, nullptr);
+    xTaskCreate(MQTTWorker::TaskHandler, "MQTTWorker::TaskHandler", 8192, state, 1 | portPRIVILEGE_BIT, nullptr);
+    xTaskCreate(AtmosphereWorker::TaskHandler, "AtmosphereWorker::TaskHandler", 8192, state, 1 | portPRIVILEGE_BIT, nullptr);
+    xTaskCreate(NotifierWorker, "Notifier", 1024, flags, 1 | portPRIVILEGE_BIT, nullptr);
 }
 
 void loop() {

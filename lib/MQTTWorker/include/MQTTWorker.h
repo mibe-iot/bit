@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Arduino.h>
+#include <cstdint>
 
 const uint32_t MQTT_TIMEOUT = 30000;
 const uint16_t MQTT_PORT = 1883;

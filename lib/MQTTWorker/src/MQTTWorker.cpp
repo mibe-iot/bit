@@ -3,6 +3,8 @@
 #include <SharedState.h>
 #include <ESPmDNS.h>
 
+const char TAG[] = "MQTT";
+
 void MQTTWorker::TaskHandler(void *param) {
     auto state = (SharedState *) param;
     uint32_t lastPublish = 0;
@@ -34,7 +36,7 @@ void MQTTWorker::TaskHandler(void *param) {
                 xEventGroupClearBits(state->flags, SharedConnectivityState::MQTT_CONNECT);
                 if (state->mqtt->connect(MQTT_CLIENT)) {
                     if (!state->mqtt->subscribe("#")) {
-                        Serial.println("Error subscribing to all topics!");
+                        ESP_LOGE(TAG, "error when trying to subscribe to all topics");
                     }
 
                     DynamicJsonDocument document(1024);
@@ -47,13 +49,12 @@ void MQTTWorker::TaskHandler(void *param) {
                     serializeJson(document, buf, 1024);
 
                     if (!state->mqtt->publish("/mibe/actions", buf)) {
-                        ESP_LOGE("MQTT", "cannot sent actions to broker");
+                        ESP_LOGE(TAG, "cannot sent actions to broker");
                     }
 
                     xEventGroupSetBits(state->flags, SharedConnectivityState::MQTT_CONNECT);
                 } else {
-                    Serial.println("Failed to connect to MQTT!");
-                    Serial.println("Wifi ip" + client.localIP().toString());
+                    ESP_LOGE(TAG, "failed to connect to MQTT");
                 }
             } else {
                 uint32_t time;
@@ -70,7 +71,7 @@ void MQTTWorker::TaskHandler(void *param) {
                     serializeJson(document, buf, 1024);
 
                     if (!state->mqtt->publish(("/mibe/reports/" + state->configuration->wifi->GetIdentifier()).c_str(), buf)) {
-                        Serial.println("Error publishing uptime topic!");
+                        ESP_LOGE(TAG, "error when trying to publish in uptime topic");
                     }
                     lastPublish = time;
                 }

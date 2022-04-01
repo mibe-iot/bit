@@ -9,7 +9,7 @@ void AtmosphereWorker::TaskHandler(void *param) {
 
     while (true) {
         auto result = xEventGroupWaitBits(state->flags, SharedConnectivityState::WIFI_CONNECTED, pdFALSE, pdTRUE,
-                                          pdMS_TO_TICKS(20));
+                                          pdMS_TO_TICKS(100));
         if (!(result & SharedConnectivityState::WIFI_CONNECTED)) {
             vTaskDelay(pdMS_TO_TICKS(300));
             continue;
