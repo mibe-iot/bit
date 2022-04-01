@@ -1,17 +1,15 @@
 #include <MQTTWorker.h>
 #include <WiFi.h>
-#include <PubSubClient.h>
 #include <SharedState.h>
 #include <ESPmDNS.h>
 
 void MQTTWorker::TaskHandler(void *param) {
     auto state = (SharedState *) param;
-
-    WiFiClient client;
-    PubSubClient mqtt(client);
     uint32_t lastPublish = 0;
 
-    mqtt.setCallback([](char *topic, uint8_t *payload, unsigned int len) {
+    WiFiClient client;
+    state->mqtt->setClient(client);
+    state->mqtt->setCallback([](char *topic, uint8_t *payload, unsigned int len) {
         Serial.print("MQTT topic \"");
         Serial.print(topic);
         Serial.print("\" with value \"");
@@ -26,17 +24,16 @@ void MQTTWorker::TaskHandler(void *param) {
         EventBits_t uxBits = xEventGroupWaitBits(state->flags, SharedConnectivityState::WIFI_CONNECTED, pdFALSE, pdTRUE,
                                                  pdMS_TO_TICKS(200));
         if ((uxBits & SharedConnectivityState::WIFI_CONNECTED) == SharedConnectivityState::WIFI_CONNECTED) {
-            if (!mqtt.connected()) {
+            if (!state->mqtt->connected()) {
                 mdns_init();
 
                 auto ip = MDNS.queryHost("thinker", 5000);
 
-                mqtt.setServer(ip.toString().c_str(), MQTT_PORT);
+                state->mqtt->setServer(ip.toString().c_str(), MQTT_PORT);
 
                 xEventGroupClearBits(state->flags, SharedConnectivityState::MQTT_CONNECT);
-                if (mqtt.connect(MQTT_CLIENT)) {
-                    xEventGroupSetBits(state->flags, SharedConnectivityState::MQTT_CONNECT);
-                    if (!mqtt.subscribe("#")) {
+                if (state->mqtt->connect(MQTT_CLIENT)) {
+                    if (!state->mqtt->subscribe("#")) {
                         Serial.println("Error subscribing to all topics!");
                     }
 
@@ -48,10 +45,12 @@ void MQTTWorker::TaskHandler(void *param) {
 
                     char buf[1024];
                     serializeJson(document, buf, 1024);
-                    ;
-                    if (!mqtt.publish("/mibe/actions", buf)) {
+
+                    if (!state->mqtt->publish("/mibe/actions", buf)) {
                         ESP_LOGE("MQTT", "cannot sent actions to broker");
                     }
+
+                    xEventGroupSetBits(state->flags, SharedConnectivityState::MQTT_CONNECT);
                 } else {
                     Serial.println("Failed to connect to MQTT!");
                     Serial.println("Wifi ip" + client.localIP().toString());
@@ -70,12 +69,12 @@ void MQTTWorker::TaskHandler(void *param) {
                     char buf[1024];
                     serializeJson(document, buf, 1024);
 
-                    if (!mqtt.publish(("/mibe/reports/" + state->configuration->wifi->GetIdentifier()).c_str(), buf)) {
+                    if (!state->mqtt->publish(("/mibe/reports/" + state->configuration->wifi->GetIdentifier()).c_str(), buf)) {
                         Serial.println("Error publishing uptime topic!");
                     }
                     lastPublish = time;
                 }
-                mqtt.loop();
+                state->mqtt->loop();
             }
         }
         vTaskDelay(pdMS_TO_TICKS(300));

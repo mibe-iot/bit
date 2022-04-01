@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <SharedConfiguration.h>
+#include <PubSubClient.h>
 
 enum SharedConnectivityState : uint32_t {
     BLE_CONNECTED = 1 << 0,
@@ -14,7 +15,7 @@ enum SharedConnectivityState : uint32_t {
 
 struct SharedState {
 public:
-    void CheckConfiguration() {
+    void CheckConfiguration() const {
         if (configuration->wifi->GetSSID().length()) {
             xEventGroupSetBits(flags, SharedConnectivityState::SSID_RECEIVED);
         }
@@ -28,5 +29,6 @@ public:
 
 public:
     EventGroupHandle_t flags;
+    PubSubClient *mqtt;
     SharedConfiguration *configuration;
 };
