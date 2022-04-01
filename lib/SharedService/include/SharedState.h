@@ -21,7 +21,7 @@ public:
         if (configuration->wifi->GetPassword().length()) {
             xEventGroupSetBits(flags, SharedConnectivityState::PASSWORD_RECEIVED);
         }
-        if (configuration->wifi->GetIdentifier().length()) {
+        if (configuration->mqtt->GetDeviceIdentifier().length()) {
             xEventGroupSetBits(flags, SharedConnectivityState::IDENTIFIER_RECEIVED);
         }
     };
