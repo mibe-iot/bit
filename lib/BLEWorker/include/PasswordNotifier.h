@@ -6,14 +6,15 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <SharedState.h>
 
 class PasswordNotifier : public BLECharacteristicCallbacks {
 public:
-    PasswordNotifier(EventGroupHandle_t flags);
+    PasswordNotifier(SharedState *state);
 
 public:
     void onWrite(BLECharacteristic *pCharacteristic) override;
 
 private:
-    EventGroupHandle_t flags;
+    SharedState *state;
 };
