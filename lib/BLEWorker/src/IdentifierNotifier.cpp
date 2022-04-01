@@ -10,6 +10,6 @@ void IdentifierNotifier::onWrite(BLECharacteristic *pCharacteristic) {
 
     if (rxValue.length() > 0) {
         xEventGroupSetBits(state->flags, SharedConnectivityState::IDENTIFIER_RECEIVED);
-        state->configuration->wifi->SetIdentifier(rxValue.c_str());
+        state->configuration->mqtt->SetDeviceIdentifier(rxValue.c_str());
     }
 }

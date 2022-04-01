@@ -3,7 +3,7 @@
 
 WifiConfiguration::WifiConfiguration() {
     preferences = new Preferences;
-    preferences->begin("bit", false);
+    preferences->begin("wifi", false);
 }
 
 WifiConfiguration::~WifiConfiguration() {
@@ -24,12 +24,4 @@ String WifiConfiguration::GetPassword() {
 
 void WifiConfiguration::SetPassword(String password) {
     preferences->putString("password", password);
-}
-
-String WifiConfiguration::GetIdentifier() {
-    return preferences->getString("identifier", "");
-}
-
-void WifiConfiguration::SetIdentifier(String identifier) {
-    preferences->putString("identifier", identifier);
 }

@@ -2,6 +2,7 @@
 
 #include <BleConfiguration.h>
 #include <WifiConfiguration.h>
+#include <MQTTConfiguration.h>
 
 class SharedConfiguration {
 public:
@@ -11,4 +12,5 @@ public:
 public:
     BleConfiguration *ble;
     WifiConfiguration *wifi;
+    MQTTConfiguration *mqtt;
 };

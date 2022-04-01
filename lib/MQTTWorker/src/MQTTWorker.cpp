@@ -7,7 +7,6 @@ const char TAG[] = "MQTT";
 
 void MQTTWorker::TaskHandler(void *param) {
     auto state = (SharedState *) param;
-    uint32_t lastPublish = 0;
 
     WiFiClient client;
     state->mqtt->setClient(client);
@@ -28,10 +27,8 @@ void MQTTWorker::TaskHandler(void *param) {
         if ((uxBits & SharedConnectivityState::WIFI_CONNECTED) == SharedConnectivityState::WIFI_CONNECTED) {
             if (!state->mqtt->connected()) {
                 mdns_init();
-
-                auto ip = MDNS.queryHost("thinker", 5000);
-
-                state->mqtt->setServer(ip.toString().c_str(), MQTT_PORT);
+                auto ip = MDNS.queryHost(MQTT_SERVER, 5000);
+                state->mqtt->setServer(MQTT_SERVER, MQTT_PORT);
 
                 xEventGroupClearBits(state->flags, SharedConnectivityState::MQTT_CONNECT);
                 if (state->mqtt->connect(MQTT_CLIENT)) {
@@ -40,7 +37,7 @@ void MQTTWorker::TaskHandler(void *param) {
                     }
 
                     DynamicJsonDocument document(1024);
-                    document[F("deviceId")] = state->configuration->wifi->GetIdentifier();
+                    document[F("deviceId")] = state->configuration->mqtt->GetDeviceIdentifier();
                     document[F("deviceClass")] = "fervent";
                     document[F("actions")][0][F("name")] = "atmosphere";
                     document[F("reportTypes")][0] = "data";
@@ -55,28 +52,9 @@ void MQTTWorker::TaskHandler(void *param) {
                     xEventGroupSetBits(state->flags, SharedConnectivityState::MQTT_CONNECT);
                 } else {
                     ESP_LOGE(TAG, "failed to connect to MQTT");
+                    vTaskDelay(pdMS_TO_TICKS(5000));
                 }
-            } else {
-                uint32_t time;
-                time = millis();
-                if ((!lastPublish) || (time - lastPublish >= MQTT_TIMEOUT)) {
-                    char data[11];
-                    ultoa(time, data, 10);
-
-                    DynamicJsonDocument document(1024);
-                    document[F("reportType")] = "data";
-                    document[F("reportData")][F("uptime")] = std::string(data);
-
-                    char buf[1024];
-                    serializeJson(document, buf, 1024);
-
-                    if (!state->mqtt->publish(("/mibe/reports/" + state->configuration->wifi->GetIdentifier()).c_str(), buf)) {
-                        ESP_LOGE(TAG, "error when trying to publish in uptime topic");
-                    }
-                    lastPublish = time;
-                }
-                state->mqtt->loop();
-            }
+            } else state->mqtt->loop();
         }
         vTaskDelay(pdMS_TO_TICKS(300));
     }
