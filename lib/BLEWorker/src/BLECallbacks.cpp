@@ -1,20 +1,20 @@
 #include <Arduino.h>
 #include <BLECallbacks.h>
-#include <secrets.h>
 
-BLECallbacks::BLECallbacks(EventGroupHandle_t flags) {
-    xEventGroupClearBits(flags, SharedConnectivityState::CONNECTED);
-    this->flags = flags;
+BLECallbacks::BLECallbacks(SharedState *state) {
+    Serial.println("XEvent called");
+    xEventGroupClearBits(state->flags, SharedConnectivityState::BLE_CONNECTED);
+    this->state = state;
 }
 
 void BLECallbacks::onConnect(BLEServer *pServer) {
-    xEventGroupSetBits(flags, SharedConnectivityState::CONNECTED);
+    xEventGroupSetBits(state->flags, SharedConnectivityState::BLE_CONNECTED);
     Serial.println("Thinker connected");
     BLEServerCallbacks::onConnect(pServer);
 }
 
 void BLECallbacks::onDisconnect(BLEServer *pServer) {
-    xEventGroupClearBits(flags, SharedConnectivityState::CONNECTED);
+    xEventGroupClearBits(state->flags, SharedConnectivityState::BLE_CONNECTED);
     Serial.println("Thinker disconnected");
     BLEServerCallbacks::onDisconnect(pServer);
 }

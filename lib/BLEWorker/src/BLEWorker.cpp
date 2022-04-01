@@ -1,54 +1,38 @@
 #include <BLEWorker.h>
 
-#include <secrets.h>
+#include <SharedState.h>
 #include <BLECallbacks.h>
-#include <NameNotifier.h>
+#include <IdentifierNotifier.h>
 #include <SSIDNotifier.h>
 #include <PasswordNotifier.h>
 
 void BLEWorker::TaskHandler(void *param) {
-    EventGroupHandle_t flags = (EventGroupHandle_t) param;
+    SharedState *state = (SharedState *) param;
 
-    auto secrets = Secrets::GetJsonObject();
-
-    BLEDevice::init(secrets[F("SERVICE_NAME")]);
+    BLEDevice::init(state->configuration->ble->GetServiceName());
 
     BLEServer *pServer = BLEDevice::createServer();
-    pServer->setCallbacks(new BLECallbacks(flags));
+    pServer->setCallbacks(new BLECallbacks(state));
 
-    BLEService *pService = pServer->createService(secrets[F("SERVICE_UUID")].as<std::string>());
+    BLEService *pService = pServer->createService(state->configuration->ble->GetServiceReceiver());
 
     BLECharacteristic *nameReceiverCharacteristic = pService->createCharacteristic(
-            secrets[F("SERVICE_NAME_RECEIVER")].as<std::string>(),
+            state->configuration->ble->GetIdentifierReceiver(),
             BLECharacteristic::PROPERTY_WRITE_NR);
-    nameReceiverCharacteristic->setCallbacks(new NameNotifier(flags));
+    nameReceiverCharacteristic->setCallbacks(new IdentifierNotifier(state));
 
     BLECharacteristic *ssidReceiverCharacteristic = pService->createCharacteristic(
-            secrets[F("SERVICE_SSID_RECEIVER")].as<std::string>(),
+            state->configuration->ble->GetSSIDReceiver(),
             BLECharacteristic::PROPERTY_WRITE_NR);
-    ssidReceiverCharacteristic->setCallbacks(new SSIDNotifier(flags));
+    ssidReceiverCharacteristic->setCallbacks(new SSIDNotifier(state));
 
     BLECharacteristic *passwordReceiverCharacteristic = pService->createCharacteristic(
-            secrets[F("SERVICE_PASSWORD_RECEIVER")].as<std::string>(),
+            state->configuration->ble->GetPasswordReceiver(),
             BLECharacteristic::PROPERTY_WRITE_NR);
-    passwordReceiverCharacteristic->setCallbacks(new PasswordNotifier(flags));
+    passwordReceiverCharacteristic->setCallbacks(new PasswordNotifier(state));
 
     pService->start();
     pServer->getAdvertising()->start();
-
-    while (true) {
-        EventBits_t uxBits = xEventGroupWaitBits(flags, SharedConnectivityState::WIFI_CONNECTED, pdFALSE, pdTRUE,
-                                                 pdMS_TO_TICKS(200));
-        if ((uxBits & SharedConnectivityState::WIFI_CONNECTED) == SharedConnectivityState::WIFI_CONNECTED) {
-            break;
-        }
-        vTaskDelay(pdMS_TO_TICKS(300));
-    }
-
-    pServer->getAdvertising()->stop();
-    pService->stop();
-
-    BLEDevice::deinit();
 
     vTaskDelete(nullptr);
 }

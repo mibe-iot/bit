@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <secrets.h>
+#include <SharedState.h>
 #include <WiFiWorker.h>
 #include <BLEWorker.h>
 #include <MQTTWorker.h>
@@ -23,13 +23,18 @@
 
 void setup() {
     EventGroupHandle_t flags = xEventGroupCreate();
+    auto configuration = new SharedConfiguration();
+
+    auto state = new SharedState{ flags, configuration };
+    state->CheckConfiguration();
 
     pinMode(LED, OUTPUT);
     digitalWrite(LED, LOW);
     Serial.begin(115200);
 
-    xTaskCreate(BLEWorker::TaskHandler, "BLEWorker::TaskHandler", 8192, flags, 1, nullptr);
-    xTaskCreate(WiFiWorker::TaskHandler, "WiFiWorker::TaskHandler", 8192, flags, 2, nullptr);
+    xTaskCreate(BLEWorker::TaskHandler, "BLEWorker::TaskHandler", 8192, state, 1, nullptr);
+    xTaskCreate(WiFiWorker::TaskHandler, "WiFiWorker::TaskHandler", 8192, state, 2, nullptr);
+    xTaskCreate(MQTTWorker::TaskHandler, "MQTTWorker::TaskHandler", 8192, state, 1, nullptr);
     xTaskCreate(NotifierWorker, "Notifier", 1024, flags, 10, nullptr);
 
     Serial.println("Waiting a client connection to notify...");

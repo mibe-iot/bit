@@ -6,14 +6,15 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <SharedState.h>
 
-class NameNotifier : public BLECharacteristicCallbacks {
+class IdentifierNotifier : public BLECharacteristicCallbacks {
 public:
-    NameNotifier(EventGroupHandle_t flags);
+    IdentifierNotifier(SharedState *state);
 
 public:
     void onWrite(BLECharacteristic *pCharacteristic) override;
 
 private:
-    EventGroupHandle_t flags;
+    SharedState *state;
 };

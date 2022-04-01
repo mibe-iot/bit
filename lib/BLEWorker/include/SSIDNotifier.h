@@ -6,14 +6,15 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <SharedState.h>
 
 class SSIDNotifier : public BLECharacteristicCallbacks {
 public:
-    SSIDNotifier(EventGroupHandle_t flags);
+    SSIDNotifier(SharedState *state);
 
 private:
     void onWrite(BLECharacteristic *pCharacteristic) override;
 
 private:
-    EventGroupHandle_t flags;
+    SharedState *state;
 };
