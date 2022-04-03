@@ -23,10 +23,16 @@
 
 void setup() {
     EventGroupHandle_t flags = xEventGroupCreate();
+    auto actions = new ActionsService();
     auto configuration = new SharedConfiguration();
     auto mqtt = new PubSubClient();
-    auto state = new SharedState{flags, mqtt, configuration};
+    auto state = new SharedState{actions, flags, mqtt, configuration};
     state->CheckConfiguration();
+
+    actions->registerAction("/mibe/reports/fnfj", [](std::string buf){
+        ESP_LOGE("MAIN", "OK");
+        Serial.printf("MQTT topic received message: %s", buf.c_str());
+    });
 
     pinMode(LED, OUTPUT);
     digitalWrite(LED, LOW);
