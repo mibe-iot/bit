@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ActionsService.h>
 #include <SharedConfiguration.h>
 #include <PubSubClient.h>
 
@@ -27,6 +28,7 @@ public:
     };
 
 public:
+    ActionsService *actions;
     EventGroupHandle_t flags;
     PubSubClient *mqtt;
     SharedConfiguration *configuration;
