@@ -32,7 +32,10 @@ void BLEWorker::TaskHandler(void *param) {
     passwordReceiverCharacteristic->setCallbacks(new PasswordNotifier(state));
 
     pService->start();
-    pServer->getAdvertising()->start();
+
+    auto adv = pServer->getAdvertising();
+    adv->addServiceUUID(state->configuration->ble->GetServiceReceiver());
+    adv->start();
 
     vTaskDelete(nullptr);
 }
