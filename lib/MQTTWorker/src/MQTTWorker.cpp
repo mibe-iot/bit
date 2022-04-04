@@ -10,15 +10,8 @@ void MQTTWorker::TaskHandler(void *param) {
 
     WiFiClient client;
     state->mqtt->setClient(client);
-    state->mqtt->setCallback([](char *topic, uint8_t *payload, unsigned int len) {
-        Serial.print("MQTT topic \"");
-        Serial.print(topic);
-        Serial.print("\" with value \"");
-        for (uint16_t i = 0; i < len; ++i)
-            Serial.print((char) payload[i]);
-        Serial.print("\" (");
-        Serial.print(len);
-        Serial.println(" byte(s)) received");
+    state->mqtt->setCallback([&state](char *topic, uint8_t *payload, unsigned int len) {
+        state->actions->handle(topic, std::string((char *)payload, len));
     });
 
     while (true) {
@@ -28,7 +21,7 @@ void MQTTWorker::TaskHandler(void *param) {
             if (!state->mqtt->connected()) {
                 mdns_init();
                 auto ip = MDNS.queryHost(MQTT_SERVER, 5000);
-                state->mqtt->setServer(MQTT_SERVER, MQTT_PORT);
+                state->mqtt->setServer(ip.toString().c_str(), MQTT_PORT);
 
                 xEventGroupClearBits(state->flags, SharedConnectivityState::MQTT_CONNECT);
                 if (state->mqtt->connect(MQTT_CLIENT)) {
